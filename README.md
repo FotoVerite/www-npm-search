@@ -1,4 +1,4 @@
 www-npm-search
-==============
+============
 
-Search Module for www-npm
+An elasticsearch module for the www-npm website

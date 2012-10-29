@@ -1,0 +1,23 @@
+{
+    "name": "www-npm-search",
+    "description": "elastic search module for npmjs",
+    "version": "0.5.0",
+    "author": "Matthew Bergman",
+    "keywords": [
+        "npm",
+        "search"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/FotoVerite/www-npm-search.git"
+    },
+    "main": "./index.js",
+    "engines": {
+        "node": ">=0.6"
+    },
+    "license": "MIT",
+    "dependencies": {
+        "elasticsearchclient": "0.2.x"
+    }
+
+}
