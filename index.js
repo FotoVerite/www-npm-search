@@ -16,6 +16,8 @@ function wwwNpmSearch(options) {
   esClient.createRegistry = createRegistry;
   esClient.createRiver = createRiver;
   esClient.setRegistryMaps = setRegistryMaps;
+  esClient.searchRegistry = searchRegistry;
+
 
 
   esClient.client = new elasticSearch(esServerOptions);
