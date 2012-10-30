@@ -1,7 +1,7 @@
 {
     "name": "www-npm-search",
     "description": "elastic search module for npmjs",
-    "version": "0.5.1",
+    "version": "0.5.2",
     "author": "Matthew Bergman",
     "keywords": [
         "npm",

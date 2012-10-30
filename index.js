@@ -17,21 +17,41 @@ function wwwNpmSearch(options) {
   esClient.createRiver = createRiver;
   esClient.setRegistryMaps = setRegistryMaps;
   esClient.searchRegistry = searchRegistry;
-
-
+  esClient.unlessIndexExists = unlessIndexExists;
 
   esClient.client = new elasticSearch(esServerOptions);
   var client = esClient.client;
 
   function reindexRegistry(index, type) {
-    esClient.implode('_river');
-    esClient.implode(index);
-    esClient.createRegistry(index, type);
+    queue(function (cb) {
+        esClient.implode('_river', cb);
+      }, function (cb) {
+        esClient.implode(index, cb);
+      },
+        function(cb) {
+        esClient.createRegistry(index, type);
+      }
+    );
   }
 
-  function implode(index) {
+  function implode(index, cb) {
     client.createCall({path: index, method:"DELETE"}, esServerOptions)
-    .on('data', function(data) { console.log(data); })
+    .on('data', function(data) {
+      console.log(data);
+      if(cb) {
+        cb();
+      }
+    })
+    .exec();
+  }
+
+  function unlessIndexExists(index, cb) {
+    client.createCall({path: (index +'/_status'), method:"GET"}, esServerOptions)
+    .on('data', function(data) {
+      if(cb && JSON.parse(data).status === 404) {
+        cb();
+      }
+    })
     .exec();
   }
 
@@ -52,7 +72,7 @@ function wwwNpmSearch(options) {
           "db" : "registry",
           "filter" : null,
           "ignore_attachments":true,
-          "script": "if(ctx.doc.versions){ctx.doc.versions = null};"
+          "script": "ctx.doc.versions = null"
         },
        "index" : {
           "index" : index_name,
@@ -79,13 +99,14 @@ function wwwNpmSearch(options) {
                 };
     maps.author = {"type" : "multi_field",
                   "fields": {
-                    "author": {"type": "string", "index": "not_analyzed", "boost": 2} ,
+                    "author": {"type": "string", "index": "not_analyzed", "boost": 10} ,
                     "autocomplete" : {"type" : "string", "index" : "analyzed"}
                   }
                 };
-    maps.description = {"type" : "string"};
+    maps.description = {"type" : "string", "boost": 0.5};
     maps.readme = {"type" : "string", "boost": 0.2};
     maps.keywords = {"type" : "string", "index_name" : "keywords"};
+    maps.repository = {"type": "string", "index_name": "repos"};
     client.putMapping(index, type, mappings).on('data', function(data) {
         console.log(data);
         cb(index, type);
@@ -100,6 +121,25 @@ function wwwNpmSearch(options) {
         function(data) {
           return cb(data);
       }).exec();
+  }
+
+  // flow control is fun!
+  // Taken from npm-www
+  function queue () {
+    var args = [].slice.call(arguments);
+    var cb = args.pop();
+    go(args.shift());
+    function go (fn) {
+      if (!fn) {
+        return cb();
+      }
+      fn(function (er) {
+        if (er) {
+          return cb(er);
+        }
+        go(args.shift());
+      });
+    }
   }
 
   return esClient;
